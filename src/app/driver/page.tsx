@@ -12,15 +12,17 @@ export default async function DriverPage() {
   if (!user) redirect("/login");
   if (user.role !== "DRIVER") redirect("/");
 
-  const orders = await prisma.order.findMany({
-    where: { driverId: user.id },
-    include: {
-      customer: true,
-      address: { include: { zone: true } },
-      items: { include: { product: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const orders = await prisma.order
+    .findMany({
+      where: { driverId: user.id },
+      include: {
+        customer: true,
+        address: { include: { zone: true } },
+        items: { include: { product: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    })
+    .catch(() => []);
 
   const active = orders.filter((o) => o.status !== "DELIVERED" && o.status !== "CANCELLED");
   const done = orders.filter((o) => o.status === "DELIVERED");

@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/auth";
 import { formatINR } from "@/lib/utils";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { OrderForm } from "./order-form";
+import { FALLBACK_PRODUCTS, FALLBACK_ZONES } from "@/lib/demo-data";
 
 export default async function ProductsPage() {
   const user = await getSessionUser();
@@ -14,14 +15,21 @@ export default async function ProductsPage() {
     if (user.role === "DRIVER") redirect("/driver");
   }
 
-  const [products, zones, address] = await Promise.all([
-    prisma.product.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.zone.findMany({ orderBy: { name: "asc" } }),
-    prisma.address.findFirst({
-      where: { userId: user.id },
-      include: { zone: true },
-    }),
+  const [productsData, zonesData, address] = await Promise.all([
+    prisma.product
+      .findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } })
+      .catch(() => []),
+    prisma.zone.findMany({ orderBy: { name: "asc" } }).catch(() => []),
+    prisma.address
+      .findFirst({
+        where: { userId: user.id },
+        include: { zone: true },
+      })
+      .catch(() => null),
   ]);
+
+  const products = productsData.length > 0 ? productsData : FALLBACK_PRODUCTS;
+  const zones = zonesData.length > 0 ? zonesData : FALLBACK_ZONES;
 
   return (
     <div>

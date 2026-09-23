@@ -13,22 +13,26 @@ export default async function AdminPage() {
   if (user.role !== "ADMIN") redirect("/");
 
   const [orders, drivers, products, pendingCount] = await Promise.all([
-    prisma.order.findMany({
-      include: {
-        customer: true,
-        driver: true,
-        address: { include: { zone: true } },
-        items: { include: { product: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.user.findMany({
-      where: { role: "DRIVER" },
-      include: { zone: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.product.findMany({ orderBy: { sortOrder: "asc" } }),
-    prisma.order.count({ where: { status: "PENDING" } }),
+    prisma.order
+      .findMany({
+        include: {
+          customer: true,
+          driver: true,
+          address: { include: { zone: true } },
+          items: { include: { product: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+      .catch(() => []),
+    prisma.user
+      .findMany({
+        where: { role: "DRIVER" },
+        include: { zone: true },
+        orderBy: { name: "asc" },
+      })
+      .catch(() => []),
+    prisma.product.findMany({ orderBy: { sortOrder: "asc" } }).catch(() => []),
+    prisma.order.count({ where: { status: "PENDING" } }).catch(() => 0),
   ]);
 
   return (
