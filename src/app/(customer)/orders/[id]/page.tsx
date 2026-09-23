@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/auth";
 import { formatINR } from "@/lib/utils";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
+import { RefreshButton } from "@/components/refresh-button";
 import { CheckCircle2, Circle, Truck } from "lucide-react";
 
 const STEPS = ["PENDING", "ASSIGNED", "OUT_FOR_DELIVERY", "DELIVERED"] as const;
@@ -32,10 +33,7 @@ export default async function OrderDetailPage({
   const currentIdx =
     order.status === "CANCELLED"
       ? -1
-      : Math.max(
-          0,
-          STEPS.indexOf(order.status as (typeof STEPS)[number])
-        );
+      : Math.max(0, STEPS.indexOf(order.status as (typeof STEPS)[number]));
 
   return (
     <div>
@@ -43,9 +41,12 @@ export default async function OrderDetailPage({
         title="Order tracking"
         subtitle={`Order ${order.id.slice(0, 8)}…`}
         action={
-          <Link href="/orders">
-            <Button variant="secondary">All orders</Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <RefreshButton label="Refresh status" />
+            <Link href="/orders">
+              <Button variant="secondary">All orders</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -94,6 +95,13 @@ export default async function OrderDetailPage({
                           {order.driver.phone ? ` · ${order.driver.phone}` : ""}
                         </p>
                       ) : null}
+                      {step === "DELIVERED" && order.deliveredAt ? (
+                        <p className="text-sm text-slate-500">
+                          {new Date(order.deliveredAt).toLocaleString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                          })}
+                        </p>
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -129,6 +137,9 @@ export default async function OrderDetailPage({
               <br />
               {order.address.zone.name}, Hyderabad {order.address.pincode}
             </p>
+            {order.notes ? (
+              <p className="mt-1 text-xs italic text-amber-700">Note: {order.notes}</p>
+            ) : null}
           </div>
 
           <div className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-800">

@@ -81,7 +81,7 @@ export default async function DriverPage() {
               </div>
 
               <div className="mt-4">
-                <MarkDelivered orderId={o.id} />
+                <MarkDelivered orderId={o.id} status={o.status} />
               </div>
             </Card>
           ))}

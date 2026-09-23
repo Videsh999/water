@@ -91,6 +91,11 @@ export default async function AdminPage() {
       </Card>
 
       <h2 className="mb-3 text-lg font-semibold text-slate-900">Orders</h2>
+      {orders.length === 0 ? (
+        <Card>
+          <p className="text-slate-500">No orders yet. When a customer places an order, it will show up here for assignment.</p>
+        </Card>
+      ) : (
       <div className="space-y-3">
         {orders.map((o) => (
           <Card key={o.id}>
@@ -121,7 +126,7 @@ export default async function AdminPage() {
               <StatusBadge status={o.status} />
             </div>
 
-            {(o.status === "PENDING" || o.status === "ASSIGNED") && (
+            {(o.status === "PENDING" || o.status === "ASSIGNED" || o.status === "OUT_FOR_DELIVERY") && (
               <div className="mt-4 border-t border-slate-100 pt-3">
                 <AssignDriver
                   orderId={o.id}
@@ -137,6 +142,7 @@ export default async function AdminPage() {
           </Card>
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Input, Label } from "@/components/ui";
 
@@ -16,6 +16,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("customer123");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled || !data.user) return;
+        const role = data.user.role;
+        if (role === "ADMIN") router.replace("/admin");
+        else if (role === "DRIVER") router.replace("/driver");
+        else router.replace("/products");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function login(e?: React.FormEvent) {
     e?.preventDefault();

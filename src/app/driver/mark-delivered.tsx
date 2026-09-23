@@ -3,12 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
-import { Check } from "lucide-react";
+import { Check, Truck } from "lucide-react";
 
-export function MarkDelivered({ orderId }: { orderId: string }) {
+export function MarkDelivered({
+  orderId,
+  status,
+}: {
+  orderId: string;
+  status: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const isStart = status === "ASSIGNED";
 
   async function mark() {
     setLoading(true);
@@ -33,8 +41,12 @@ export function MarkDelivered({ orderId }: { orderId: string }) {
   return (
     <div>
       <Button type="button" onClick={mark} disabled={loading} className="w-full sm:w-auto">
-        <Check className="h-4 w-4" />
-        {loading ? "Updating…" : "Mark delivered"}
+        {isStart ? <Truck className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+        {loading
+          ? "Updating…"
+          : isStart
+            ? "Start delivery"
+            : "Mark delivered"}
       </Button>
       {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
     </div>

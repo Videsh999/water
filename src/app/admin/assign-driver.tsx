@@ -17,11 +17,13 @@ export function AssignDriver({
   const [driverId, setDriverId] = useState(currentDriverId ?? drivers[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [ok, setOk] = useState(false);
 
   async function assign() {
     if (!driverId) return;
     setLoading(true);
     setError("");
+    setOk(false);
     try {
       const res = await fetch(`/api/orders/${orderId}/assign`, {
         method: "POST",
@@ -33,12 +35,21 @@ export function AssignDriver({
         setError(data.error || "Assign failed");
         return;
       }
+      setOk(true);
       router.refresh();
     } catch {
       setError("Network error");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (drivers.length === 0) {
+    return (
+      <p className="text-sm text-amber-700">
+        No drivers seeded. Run <code className="rounded bg-amber-50 px-1">npm run db:seed</code>.
+      </p>
+    );
   }
 
   return (
@@ -58,6 +69,7 @@ export function AssignDriver({
       <Button type="button" onClick={assign} disabled={loading || !driverId}>
         {loading ? "Assigning…" : currentDriverId ? "Reassign" : "Assign driver"}
       </Button>
+      {ok ? <p className="text-sm text-emerald-600">Assigned</p> : null}
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
     </div>
   );
