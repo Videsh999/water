@@ -24,6 +24,7 @@ export function MarkDelivered({
     try {
       const res = await fetch(`/api/orders/${orderId}/deliver`, {
         method: "POST",
+        credentials: "include",
       });
       const data = await res.json();
       if (!res.ok) {

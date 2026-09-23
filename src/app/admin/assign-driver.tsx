@@ -27,6 +27,7 @@ export function AssignDriver({
     try {
       const res = await fetch(`/api/orders/${orderId}/assign`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ driverId }),
       });

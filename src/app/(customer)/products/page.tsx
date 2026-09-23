@@ -60,6 +60,7 @@ export default async function ProductsPage() {
       </div>
 
       <OrderForm
+        customerId={user.id}
         products={products.map((p) => ({
           id: p.id,
           name: p.name,

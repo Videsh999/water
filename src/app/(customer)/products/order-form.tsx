@@ -12,6 +12,7 @@ export function OrderForm({
   products,
   zones,
   defaultAddress,
+  customerId,
 }: {
   products: Product[];
   zones: Zone[];
@@ -22,6 +23,7 @@ export function OrderForm({
     pincode: string;
     zoneName: string;
   } | null;
+  customerId?: string;
 }) {
   const router = useRouter();
   const [qty, setQty] = useState<Record<string, number>>(
@@ -67,8 +69,10 @@ export function OrderForm({
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          customerId,
           type,
           notes: notes || null,
           items: items.map((i) => ({

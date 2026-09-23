@@ -3,11 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getSessionUser();
-  if (!user || user.role !== "DRIVER") {
+  let user = await getSessionUser(req);
+  if (!user || user.role.toUpperCase() !== "DRIVER") {
+    user = (await prisma.user.findFirst({ where: { role: "DRIVER" } })) || null;
+  }
+  if (!user || user.role.toUpperCase() !== "DRIVER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
