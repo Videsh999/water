@@ -6,6 +6,7 @@ import { formatINR } from "@/lib/utils";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
 import { RefreshButton } from "@/components/refresh-button";
+import { CancelButton } from "./cancel-button";
 import { CheckCircle2, Circle, Truck } from "lucide-react";
 
 const STEPS = ["PENDING", "ASSIGNED", "OUT_FOR_DELIVERY", "DELIVERED"] as const;
@@ -17,15 +18,20 @@ export default async function OrderDetailPage({
 }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  if (user.role !== "CUSTOMER") redirect("/");
 
   const { id } = await params;
   const order = await prisma.order.findFirst({
-    where: { id, customerId: user.id },
+    where:
+      user.role === "ADMIN"
+        ? { id }
+        : user.role === "DRIVER"
+          ? { id, driverId: user.id }
+          : { id, customerId: user.id },
     include: {
       address: { include: { zone: true } },
       items: { include: { product: true } },
       driver: true,
+      customer: true,
     },
   });
   if (!order) notFound();
@@ -35,16 +41,24 @@ export default async function OrderDetailPage({
       ? -1
       : Math.max(0, STEPS.indexOf(order.status as (typeof STEPS)[number]));
 
+  const backHref =
+    user.role === "ADMIN" ? "/admin" : user.role === "DRIVER" ? "/driver" : "/orders";
+  const backLabel =
+    user.role === "ADMIN" ? "Admin orders" : user.role === "DRIVER" ? "Deliveries" : "My orders";
+
   return (
     <div>
       <PageHeader
         title="Order tracking"
         subtitle={`Order ${order.id.slice(0, 8)}…`}
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {order.status === "PENDING" && (user.role === "CUSTOMER" || user.role === "ADMIN") ? (
+              <CancelButton orderId={order.id} />
+            ) : null}
             <RefreshButton label="Refresh status" />
-            <Link href="/orders">
-              <Button variant="secondary">All orders</Button>
+            <Link href={backHref}>
+              <Button variant="secondary">{backLabel}</Button>
             </Link>
           </div>
         }
@@ -58,7 +72,12 @@ export default async function OrderDetailPage({
           </div>
 
           {order.status === "CANCELLED" ? (
-            <p className="text-sm text-rose-600">This order was cancelled.</p>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+              <p className="font-medium text-rose-800">Order cancelled</p>
+              <p className="mt-1 text-xs text-rose-600">
+                This delivery was cancelled. You can place a new order anytime.
+              </p>
+            </div>
           ) : (
             <ol className="space-y-4">
               {STEPS.map((step, idx) => {
@@ -111,6 +130,21 @@ export default async function OrderDetailPage({
         </Card>
 
         <Card className="lg:col-span-2 space-y-4">
+          {user.role !== "CUSTOMER" ? (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-500">Customer</h3>
+              <p className="mt-1 text-sm font-medium text-slate-900">
+                {order.customer.name}
+              </p>
+              {order.customer.phone ? (
+                <p className="text-xs text-slate-500">{order.customer.phone}</p>
+              ) : null}
+              {order.customer.email ? (
+                <p className="text-xs text-slate-400">{order.customer.email}</p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div>
             <h3 className="text-sm font-semibold text-slate-500">Items</h3>
             <ul className="mt-2 space-y-1 text-sm">
@@ -132,10 +166,11 @@ export default async function OrderDetailPage({
           <div>
             <h3 className="text-sm font-semibold text-slate-500">Deliver to</h3>
             <p className="mt-1 text-sm text-slate-800">
-              {order.address.line1}
-              {order.address.line2 ? `, ${order.address.line2}` : ""}
+              {order.address?.line1 ?? "Address"}
+              {order.address?.line2 ? `, ${order.address.line2}` : ""}
               <br />
-              {order.address.zone.name}, Hyderabad {order.address.pincode}
+              {order.address?.zone?.name ?? "Hyderabad"}, Hyderabad{" "}
+              {order.address?.pincode ?? ""}
             </p>
             {order.notes ? (
               <p className="mt-1 text-xs italic text-amber-700">Note: {order.notes}</p>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, DEMO_FALLBACK_USERS } from "@/lib/auth";
-import { FALLBACK_PRODUCTS, FALLBACK_ZONES } from "@/lib/demo-data";
+import { FALLBACK_PRODUCTS } from "@/lib/demo-data";
 
 export async function GET(req: Request) {
   const user = await getSessionUser(req);
@@ -104,26 +104,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Add at least one product" }, { status: 400 });
     }
 
-    // 1. Ensure user exists in database to avoid foreign key errors
-    try {
-      const existingUser = await prisma.user.findFirst({
-        where: { OR: [{ id: user.id }, { email: user.email }] },
+    // 1. Ensure user exists in database and synchronize user to the real DB record
+    let dbUser = await prisma.user.findFirst({
+      where: { OR: [{ id: user.id }, { email: user.email }] },
+    });
+    if (!dbUser) {
+      dbUser = await prisma.user.create({
+        data: {
+          id: user.id,
+          email: user.email,
+          name: user.name || "Priya Sharma",
+          role: "CUSTOMER",
+          password: user.password || "customer123",
+          phone: user.phone || "+91 90000 00003",
+        },
       });
-      if (!existingUser) {
-        await prisma.user.create({
-          data: {
-            id: user.id,
-            email: user.email,
-            name: user.name || "Priya Sharma",
-            role: "CUSTOMER",
-            password: user.password || "customer123",
-            phone: user.phone || "+91 90000 00003",
-          },
-        });
-      }
-    } catch (e) {
-      console.warn("User upsert warning:", e);
     }
+    user = dbUser;
 
     // 2. Fetch products and auto-seed fallback products if database was cold/empty
     const uniqueProductIds = [...new Set(items.map((i) => i.productId))];
@@ -167,14 +164,14 @@ export async function POST(req: Request) {
       };
     });
 
-    // 3. Resolve Zone
+    // 3. Resolve Zone to guaranteed database entity
     const addr = body.address || {};
     const line1 = String(addr.line1 || "").trim();
     if (!line1) {
       return NextResponse.json({ error: "Address required" }, { status: 400 });
     }
 
-    const targetZoneName = String(addr.zoneName || "Gachibowli");
+    const targetZoneName = String(addr.zoneName || "Gachibowli").trim();
     let zone = await prisma.zone
       .findFirst({
         where: { name: targetZoneName },
@@ -182,13 +179,25 @@ export async function POST(req: Request) {
       .catch(() => null);
 
     if (!zone) {
-      try {
-        zone = await prisma.zone.create({
-          data: { name: targetZoneName, city: "Hyderabad" },
-        });
-      } catch {
-        zone = FALLBACK_ZONES.find((z) => z.name === targetZoneName) || FALLBACK_ZONES[0];
-      }
+      zone = await prisma.zone
+        .findFirst({
+          where: { name: { contains: targetZoneName } },
+        })
+        .catch(() => null);
+    }
+
+    if (!zone) {
+      zone = await prisma.zone.findFirst().catch(() => null);
+    }
+
+    if (!zone) {
+      zone = await prisma.zone.create({
+        data: {
+          id: `zone-${targetZoneName.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+          name: targetZoneName,
+          city: "Hyderabad",
+        },
+      });
     }
 
     // 4. Resolve Address

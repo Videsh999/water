@@ -1,11 +1,13 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { formatINR } from "@/lib/utils";
 import { Card, PageHeader } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
+import { RefreshButton } from "@/components/refresh-button";
 import { AssignDriver } from "./assign-driver";
-import { Package, Users, Droplets } from "lucide-react";
+import { Package, Users, Droplets, ExternalLink } from "lucide-react";
 
 export default async function AdminPage() {
   const user = await getSessionUser();
@@ -40,6 +42,7 @@ export default async function AdminPage() {
       <PageHeader
         title="Admin"
         subtitle="Orders, driver assignment & inventory-lite."
+        action={<RefreshButton label="Refresh dashboard" />}
       />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
@@ -105,19 +108,29 @@ export default async function AdminPage() {
           <Card key={o.id}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-slate-900">
-                  {o.customer.name}
-                  <span className="ml-2 text-xs font-normal text-slate-400">
-                    {o.customer.phone}
-                  </span>
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-slate-900">
+                    {o.customer.name}
+                    <span className="ml-2 text-xs font-normal text-slate-400">
+                      {o.customer.phone}
+                    </span>
+                  </p>
+                  <Link
+                    href={`/orders/${o.id}`}
+                    className="inline-flex items-center gap-1 rounded bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 hover:bg-sky-100"
+                    title="View live order tracking"
+                  >
+                    <span>#{o.id.slice(0, 6)}</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </div>
                 <p className="mt-1 text-sm text-slate-600">
                   {o.items
                     .map((i) => `${i.quantity}× ${i.product.name}`)
                     .join(", ")}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {o.address.line1}, {o.address.zone.name} ·{" "}
+                  {o.address?.line1 ?? "Address"}, {o.address?.zone?.name ?? "Hyderabad"} ·{" "}
                   {o.type === "SUBSCRIPTION" ? "Subscription" : "One-time"} ·{" "}
                   {formatINR(o.totalInPaise)}
                 </p>

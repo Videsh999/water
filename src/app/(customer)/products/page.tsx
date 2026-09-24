@@ -75,7 +75,7 @@ export default async function ProductsPage() {
                 line2: address.line2 ?? "",
                 landmark: address.landmark ?? "",
                 pincode: address.pincode,
-                zoneName: address.zone.name,
+                zoneName: address.zone?.name ?? "Gachibowli",
               }
             : null
         }

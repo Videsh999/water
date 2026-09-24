@@ -10,24 +10,27 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.zone.deleteMany();
 
+  const zoneConfigs = [
+    { id: "zone-gachibowli", name: "Gachibowli" },
+    { id: "zone-madhapur", name: "Madhapur" },
+    { id: "zone-hitech", name: "Hitech City" },
+    { id: "zone-banjara", name: "Banjara Hills" },
+    { id: "zone-jubilee", name: "Jubilee Hills" },
+  ];
+
   const zones = await Promise.all(
-    [
-      "Gachibowli",
-      "Madhapur",
-      "Hitech City",
-      "Banjara Hills",
-      "Jubilee Hills",
-    ].map((name) =>
+    zoneConfigs.map((z) =>
       prisma.zone.create({
-        data: { name, city: "Hyderabad" },
+        data: { id: z.id, name: z.name, city: "Hyderabad" },
       })
     )
   );
 
-  const zoneByName = Object.fromEntries(zones.map((z) => [z.name, z]));
+  const zoneById = Object.fromEntries(zones.map((z) => [z.id, z]));
 
   const admin = await prisma.user.create({
     data: {
+      id: "cmuecdg190005v5xb8qit7yxv",
       email: "admin@water.hyderabad",
       name: "Water Admin",
       phone: "+91 90000 00001",
@@ -38,17 +41,19 @@ async function main() {
 
   const driver = await prisma.user.create({
     data: {
+      id: "cmuecdg1b0007v5xbd2iby1lr",
       email: "driver@water.hyderabad",
       name: "Ravi Kumar",
       phone: "+91 90000 00002",
       role: "DRIVER",
       password: "driver123",
-      zoneId: zoneByName["Gachibowli"].id,
+      zoneId: zoneById["zone-gachibowli"].id,
     },
   });
 
   const customer = await prisma.user.create({
     data: {
+      id: "cmuecdg1d0008v5xbx9l3gb3r",
       email: "customer@water.hyderabad",
       name: "Priya Sharma",
       phone: "+91 90000 00003",
@@ -60,6 +65,7 @@ async function main() {
   const products = await Promise.all([
     prisma.product.create({
       data: {
+        id: "prod-20l-jar",
         name: "20L Jar",
         description: "Purified 20-litre mineral water jar — refill & exchange friendly.",
         priceInPaise: 4000,
@@ -70,6 +76,7 @@ async function main() {
     }),
     prisma.product.create({
       data: {
+        id: "prod-1l-pack",
         name: "1L Bottled Pack (12)",
         description: "Pack of 12 × 1L purified drinking water bottles.",
         priceInPaise: 18000,
@@ -80,6 +87,7 @@ async function main() {
     }),
     prisma.product.create({
       data: {
+        id: "prod-500ml-pack",
         name: "500ml Bottled Pack (24)",
         description: "Pack of 24 × 500ml bottles — ideal for offices & events.",
         priceInPaise: 22000,
@@ -92,12 +100,13 @@ async function main() {
 
   const address = await prisma.address.create({
     data: {
+      id: "addr-customer-home",
       userId: customer.id,
       label: "Home",
       line1: "Flat 402, Lakeview Residency",
       line2: "Near DLF Cyber City",
       landmark: "Opposite Cafe Coffee Day",
-      zoneId: zoneByName["Gachibowli"].id,
+      zoneId: zoneById["zone-gachibowli"].id,
       pincode: "500032",
       city: "Hyderabad",
     },
@@ -105,6 +114,7 @@ async function main() {
 
   await prisma.order.create({
     data: {
+      id: "order-demo-pending",
       customerId: customer.id,
       addressId: address.id,
       status: "PENDING",
@@ -125,7 +135,7 @@ async function main() {
   });
 
   console.log("Seeded Water (Hyderabad)");
-  console.log("Zones:", zones.map((z) => z.name).join(", "));
+  console.log("Zones:", zones.map((z) => `${z.name} (${z.id})`).join(", "));
   console.log("Demo logins:");
   console.log("  Admin:    admin@water.hyderabad / admin123");
   console.log("  Driver:   driver@water.hyderabad / driver123");

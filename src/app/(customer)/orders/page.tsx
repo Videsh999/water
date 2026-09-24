@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/auth";
 import { formatINR } from "@/lib/utils";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
+import { RefreshButton } from "@/components/refresh-button";
 
 export default async function CustomerOrdersPage() {
   const user = await getSessionUser();
@@ -27,9 +28,12 @@ export default async function CustomerOrdersPage() {
         title="My orders"
         subtitle="Track status from pending to delivered."
         action={
-          <Link href="/products">
-            <Button>Order again</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <RefreshButton label="Refresh" />
+            <Link href="/products">
+              <Button>Order again</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -51,7 +55,7 @@ export default async function CustomerOrdersPage() {
                       {o.items.map((i) => `${i.quantity}× ${i.product.name}`).join(", ")}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {o.address.zone.name} · {o.type === "SUBSCRIPTION" ? "Subscription" : "One-time"}
+                      {o.address?.zone?.name ?? "Hyderabad"} · {o.type === "SUBSCRIPTION" ? "Subscription" : "One-time"}
                     </p>
                   </div>
                   <StatusBadge status={o.status} />

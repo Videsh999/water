@@ -131,5 +131,11 @@ export async function setSession(userId: string) {
 
 export async function clearSession() {
   const jar = await cookies();
-  jar.delete(COOKIE);
+  jar.set(COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  });
 }
